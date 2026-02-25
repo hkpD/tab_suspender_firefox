@@ -185,4 +185,29 @@ async function getTabValue(tabId, key) {
   return await browser.sessions.getTabValue(tabId, key)
 }
 
+
+// --- HOTKEY LISTENER ---
+
+browser.commands.onCommand.addListener(function(command) {
+    if (command == "suspend-current-tab") {
+        browser.tabs.query({active: true, currentWindow: true}, function(tabs) {
+            var tab = tabs[0];
+            
+            // Check if tab exists and is not already suspended or a system page
+            if (tab && tab.url && !tab.url.startsWith("about:") && !tab.url.startsWith("moz-extension:")) {
+                
+                // Construct the suspension URL exactly how the extension expects it
+                var suspendUrl = browser.runtime.getURL("suspend.html") + 
+                                 "?url=" + encodeURIComponent(tab.url) + 
+                                 "&title=" + encodeURIComponent(tab.title) + 
+                                 "&favIconUrl=" + encodeURIComponent(tab.favIconUrl);
+                
+                // Update the tab to the suspended version
+                browser.tabs.update(tab.id, {url: suspendUrl});
+            }
+        });
+    }
+});
+
+
 loadScript()
